@@ -1,9 +1,8 @@
 import 'package:expense_app/widgets/new_transaction.dart';
 import 'package:expense_app/widgets/transaction_list.dart';
 import 'package:flutter/material.dart';
-import './widgets/new_transaction.dart';
-import './widgets/transaction_list.dart';
 import './models/transaction.dart';
+import './widgets/chart.dart';
 
 void main() {
   runApp(const MyApp());
@@ -15,9 +14,24 @@ class MyApp extends StatelessWidget {
   // ?    ROOT WIDGET.
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      title: 'Flutter App',
-      home: MyHomePage(),
+    return MaterialApp(
+      title: 'Personal Expenses',
+      theme: ThemeData(
+          primarySwatch: Colors.cyan,
+          accentColor: Colors.cyan,
+          fontFamily: 'Quicksand',
+          textTheme: ThemeData.light().textTheme.copyWith(
+                  subtitle1: const TextStyle(
+                fontFamily: 'OpenSans',
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              )),
+          appBarTheme: AppBarTheme(
+            textTheme: ThemeData.light().textTheme.copyWith(
+                headline6:
+                    const TextStyle(fontFamily: 'OpenSans', fontSize: 20)),
+          )),
+      home: const MyHomePage(),
     );
   }
 }
@@ -33,21 +47,35 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   final List<Transaction> _userTransaction = [
-    Transaction(
-        id: 't1', title: 'New Shoes', amount: 88.88, date: DateTime.now()),
-    Transaction(
-        id: 't2', title: 'Surfboard', amount: 888.62, date: DateTime.now()),
+    // Transaction(
+    //     id: 't1', title: 'New Shoes', amount: 88.88, date: DateTime.now()),
+    // Transaction(
+    //     id: 't2', title: 'Surfboard', amount: 888.62, date: DateTime.now()),
   ];
 
-  void _addNewTransaction(String title, double amount) {
-    final newTx = Transaction(
-        id: DateTime.now().toString(),
-        title: title,
-        amount: amount,
-        date: DateTime.now());
+  List<Transaction> get _recentTransaction {
+    return _userTransaction.where((tx) {
+      return tx.date.isAfter(
+        DateTime.now().subtract(const Duration(days: 7)),
+      );
+    }).toList();
+  }
 
+  void _addNewTransaction(String title, double amount, DateTime chosenDate) {
+    final newTx = Transaction(
+      id: DateTime.now().toString(),
+      title: title,
+      amount: amount,
+      date: chosenDate,
+    );
     setState(() {
       _userTransaction.add(newTx);
+    });
+  }
+
+  void _deleteTransaction(String id) {
+    setState(() {
+      _userTransaction.removeWhere((tx) => tx.id == id);
     });
   }
 
@@ -68,7 +96,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Expense Tracker'),
+        title: const Text('Personal Expenses'),
         actions: <Widget>[
           IconButton(
             onPressed: (() => _startAddNewTransaction(context)),
@@ -80,19 +108,11 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            const SizedBox(
-              width: double.infinity,
-              child: Card(
-                elevation: 5,
-                color: Colors.blue,
-                child: Text('CHART'),
-              ),
-            ),
+            Chart(_recentTransaction, recentTransactions: _recentTransaction),
+
             //* DISPLAYES ALL OF OUR TRANSACTIONS
-            TransactionList(
-              _userTransaction,
-              transactions: _userTransaction,
-            ),
+            TransactionList(_userTransaction,
+                transactions: _userTransaction, deleteTx: _deleteTransaction),
           ],
         ),
       ),
